@@ -24,8 +24,14 @@ async function run() {
     try {
         await client.connect();
 
+        // collect data form MongoDB
+        const db = client.db('travel-ease-db')
+        const vehicleData = db.collection('vehicles-data')
 
-
+        app.get('/vehicles', async (req, res) => {
+            const result = await vehicleData.find().toArray()
+            res.send(result)
+        })
 
 
         await client.db("admin").command({ ping: 1 });
