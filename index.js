@@ -24,15 +24,37 @@ async function run() {
     try {
         await client.connect();
 
-        // collect data form MongoDB
+        // connet to MongoDB
         const db = client.db('travel-ease-db')
         const vehicleData = db.collection('vehicles-data')
 
+        // get data form MongoDB
         app.get('/vehicles', async (req, res) => {
             const result = await vehicleData.find().toArray()
             res.send(result)
         })
 
+        // add new vehicle through post
+        app.post('/vehicles', async (req, res) => {
+            try {
+                const newVehicle = req.body;
+
+                // Optional: ensure required fields exist
+                if (!newVehicle.vehicleName || !newVehicle.owner || !newVehicle.coverImage) {
+                    return res.status(400).send({ message: 'Missing required fields' });
+                }
+
+                const result = await vehicleData.insertOne({
+                    ...newVehicle,
+                    createdAt: new Date(),
+                });
+
+                res.status(201).send(result);
+            } catch (error) {
+                console.error('Error adding vehicle:', error);
+                res.status(500).send({ message: 'Failed to add vehicle' });
+            }
+        });
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
