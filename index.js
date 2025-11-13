@@ -3,6 +3,7 @@ const cors = require('cors');
 require("dotenv").config();
 const app = express();
 const port = 3000;
+const { ObjectId } = require("mongodb");
 
 app.use(cors());
 app.use(express.json());
@@ -36,25 +37,21 @@ async function run() {
 
         // add new vehicle through post
         app.post('/vehicles', async (req, res) => {
-            try {
-                const newVehicle = req.body;
-
-                // Optional: ensure required fields exist
-                if (!newVehicle.vehicleName || !newVehicle.owner || !newVehicle.coverImage) {
-                    return res.status(400).send({ message: 'Missing required fields' });
-                }
-
-                const result = await vehicleData.insertOne({
-                    ...newVehicle,
-                    createdAt: new Date(),
-                });
-
-                res.status(201).send(result);
-            } catch (error) {
-                console.error('Error adding vehicle:', error);
-                res.status(500).send({ message: 'Failed to add vehicle' });
-            }
+            const newVehicle = req.body;
+            const result = await vehicleData.insertOne({
+                ...newVehicle,
+                createdAt: new Date(),
+            });
+            res.send(result);
         });
+
+        // for delete data
+        app.delete("/vehicles/:id", async (req, res) => {
+            const id = req.params.id;
+            const result = await vehicleData.deleteOne({ _id: new ObjectId(id) });
+            res.send(result);
+        });
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
