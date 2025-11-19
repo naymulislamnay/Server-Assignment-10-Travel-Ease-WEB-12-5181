@@ -62,6 +62,13 @@ async function run() {
             res.send(result);
         })
 
+        // Add new Vehicle API
+        app.post('/vehicles', async (req, res) => {
+            const newVehicle = req.body;
+            const result = await vehiclesCollection.insertOne(newVehicle);
+            res.send(result);
+        })
+
 
         await client.db('admin').command({ ping: 1 });
         console.log("Pinged Your Deployment. You Successfully Connected to MongoDB");
