@@ -34,6 +34,7 @@ async function run() {
 
 
         // Vehicles APIs
+        // All vehicles API
         app.get('/vehicles', async (req, res) => {
             const email = req.query.email;
             const query = {}
@@ -41,10 +42,20 @@ async function run() {
                 query.email = email;
             }
 
-            const cursor = vehiclesCollection.find(query);
+            const cursor = vehiclesCollection.find(query).sort({ createdAt: -1 });
             const result = await cursor.toArray();
             res.send(result);
         })
+
+        // Latest Vehicles API for HomePage
+        app.get('/latest-vehicles', async (req, res) => {
+            const cursor = vehiclesCollection.find().sort({ createdAt: -1 }).limit(8);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+
+
 
         await client.db('admin').command({ ping: 1 });
         console.log("Pinged Your Deployment. You Successfully Connected to MongoDB");
