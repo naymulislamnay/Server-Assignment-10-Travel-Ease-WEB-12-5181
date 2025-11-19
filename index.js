@@ -27,6 +27,25 @@ app.get('/', (req, res) => {
 async function run() {
     try {
         await client.connect()
+
+        const db = client.db('travel-ease-db');
+        const vehiclesCollection = db.collection('vehicles-data');
+
+
+
+        // Vehicles APIs
+        app.get('/vehicles', async (req, res) => {
+            const email = req.query.email;
+            const query = {}
+            if (email) {
+                query.email = email;
+            }
+
+            const cursor = vehiclesCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
         await client.db('admin').command({ ping: 1 });
         console.log("Pinged Your Deployment. You Successfully Connected to MongoDB");
     }
