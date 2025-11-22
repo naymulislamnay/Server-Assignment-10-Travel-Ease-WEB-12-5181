@@ -65,6 +65,7 @@ async function run() {
 
 
         // User APIs
+        // create new User
         app.post('/users', async (req, res) => {
             const newUser = req.body;
             const email = req.body.email;
@@ -79,6 +80,29 @@ async function run() {
                 res.send(result);
             }
         });
+
+        // get user data based on email
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send(user);
+        })
+
+        // API for update user data
+        app.patch('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const updateData = req.body;
+
+            const query = { email: email };
+            const update = {
+                $set: updateData
+            };
+
+            const result = await usersCollection.updateOne(query, update);
+            res.send(result);
+        })
+
 
         // Vehicles APIs
         // All vehicles API
