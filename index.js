@@ -61,6 +61,7 @@ async function run() {
         const db = client.db('travel-ease-db');
         const vehiclesCollection = db.collection('vehicles-data');
         const usersCollection = db.collection('users-data');
+        const bookingsCollection = db.collection('booking-data');
 
 
 
@@ -168,6 +169,48 @@ async function run() {
             const result = await vehiclesCollection.deleteOne(query);
             res.send(result);
         })
+
+
+        // Vehicle Booking API
+        // add a New Booking
+        app.post('/bookings', verifyFireBaseToken, async (req, res) => {
+            const { vehicleId, email } = req.body;
+
+            try {
+                const alreadyBooked = await bookingsCollection.findOne({ vehicleId });
+
+                if (alreadyBooked) {
+                    return res.status(400).send({ message: "Vehicle already booked." });
+                }
+
+                // Save booking
+                const booking = { vehicleId, email, createdAt: new Date() };
+                const result = await bookingsCollection.insertOne(booking);
+
+                // Update availability in vehicles-data
+                await vehiclesCollection.updateOne(
+                    { _id: new ObjectId(vehicleId) },
+                    { $set: { availability: "Booked" } }
+                );
+
+                res.send({ message: "Vehicle booked successfully!", result });
+            } catch (err) {
+                console.log(err);
+                res.status(500).send({ message: "Booking failed." });
+            }
+        })
+
+        // get booking data
+        app.get('/bookings/:vehicleId', async (req, res) => {
+            const vehicleId = req.params.vehicleId;
+            const booking = await bookingsCollection.findOne({ vehicleId });
+
+            if (booking) {
+                return res.send({ booked: true, email: booking.email });
+            }
+
+            res.send({ booked: false });
+        });
 
         await client.db('admin').command({ ping: 1 });
         console.log("Pinged Your Deployment. You Successfully Connected to MongoDB");
