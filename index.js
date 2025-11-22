@@ -67,24 +67,28 @@ async function run() {
         // User APIs
         // create new User
         app.post('/users', async (req, res) => {
-            const newUser = req.body;
-            const email = req.body.email;
-            const query = { email: email };
+            const { name, email, image } = req.body;
+            const query = { email };
             const existingUser = await usersCollection.findOne(query);
 
             if (existingUser) {
-                res.send({ message: 'user already exits.' })
+                return res.send({ message: 'User already exists.' });
             }
-            else {
-                const result = await usersCollection.insertOne(newUser);
-                res.send(result);
-            }
+
+            const newUser = {
+                name: name || "Your Name",
+                email,
+                image: image || "/default-Profile.png"
+            };
+
+            const result = await usersCollection.insertOne(newUser);
+            res.send(result);
         });
 
         // get user data based on email
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
-            const query = { email: email };
+            const query = { email };
             const user = await usersCollection.findOne(query);
             res.send(user);
         })
@@ -92,16 +96,19 @@ async function run() {
         // API for update user data
         app.patch('/users/:email', async (req, res) => {
             const email = req.params.email;
-            const updateData = req.body;
+            const { name, image } = req.body;
 
-            const query = { email: email };
+            const query = { email };
             const update = {
-                $set: updateData
+                $set: {
+                    ...(name && { name }),
+                    ...(image && { image })
+                }
             };
 
             const result = await usersCollection.updateOne(query, update);
             res.send(result);
-        })
+        });
 
 
         // Vehicles APIs
