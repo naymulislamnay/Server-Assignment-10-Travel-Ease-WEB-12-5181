@@ -3,11 +3,41 @@ const cors = require('cors');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
+const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
+
+
+
+const serviceAccount = require("./travel-ease-firebase-adminsdk.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+
 
 // middleware
 app.use(cors());
 app.use(express.json());
+
+// verify Token
+const verifyFireBaseToken = async (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authorization.split(' ')[1];
+
+    try {
+        const decoded = await Admin.auth().verifyIdToken(token);
+        console.log('inside token', decoded)
+        req.token_email = decoded.email;
+        next();
+    }
+    catch (error) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+}
 
 // uri
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@travelease.vacwmlf.mongodb.net/?appName=TravelEase`;
@@ -30,8 +60,25 @@ async function run() {
 
         const db = client.db('travel-ease-db');
         const vehiclesCollection = db.collection('vehicles-data');
+        const usersCollection = db.collection('users-data');
 
 
+
+        // User APIs
+        app.post('/users', async (req, res) => {
+            const newUser = req.body;
+            const email = req.body.email;
+            const query = { email: email };
+            const existingUser = await usersCollection.findOne(query);
+
+            if (existingUser) {
+                res.send({ message: 'user already exits.' })
+            }
+            else {
+                const result = await usersCollection.insertOne(newUser);
+                res.send(result);
+            }
+        });
 
         // Vehicles APIs
         // All vehicles API
@@ -63,7 +110,7 @@ async function run() {
         })
 
         // Add new Vehicle API
-        app.post('/vehicles', async (req, res) => {
+        app.post('/vehicles', verifyFireBaseToken, async (req, res) => {
             const newVehicle = req.body;
             const result = await vehiclesCollection.insertOne(newVehicle);
             res.send(result);
