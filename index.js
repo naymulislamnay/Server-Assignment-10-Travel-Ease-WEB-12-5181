@@ -115,10 +115,10 @@ async function run() {
         // Vehicles APIs
         // All vehicles API
         app.get('/vehicles', async (req, res) => {
-            const email = req.query.email;
+            const userEmail = req.query.userEmail;
             const query = {}
-            if (email) {
-                query.email = email;
+            if (userEmail) {
+                query.userEmail = userEmail;
             }
 
             const cursor = vehiclesCollection.find(query).sort({ createdAt: -1 });
@@ -142,7 +142,7 @@ async function run() {
         })
 
         // Add new Vehicle API
-        app.post('/vehicles', verifyFireBaseToken, async (req, res) => {
+        app.post('/vehicles', async (req, res) => {
             const newVehicle = req.body;
             const result = await vehiclesCollection.insertOne(newVehicle);
             res.send(result);
