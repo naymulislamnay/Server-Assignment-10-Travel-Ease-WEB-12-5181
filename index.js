@@ -29,7 +29,7 @@ const verifyFireBaseToken = async (req, res, next) => {
     const token = authorization.split(' ')[1];
 
     try {
-        const decoded = await Admin.auth().verifyIdToken(token);
+        const decoded = await admin.auth().verifyIdToken(token);
         console.log('inside token', decoded)
         req.token_email = decoded.email;
         next();
@@ -200,6 +200,26 @@ async function run() {
             }
         })
 
+        // my bookings data
+        app.get('/my-bookings', verifyFireBaseToken, async (req, res) => {
+            const email = req.query.email;
+
+            if (!email) {
+                return res.status(400).send({ message: "Email is required" });
+            }
+
+            try {
+                const bookings = await bookingsCollection.find({ email }).toArray();
+                const vehicleIds = bookings.map(b => new ObjectId(b.vehicleId));
+                const vehicles = await vehiclesCollection.find({ _id: { $in: vehicleIds } }).toArray();
+
+                res.send(vehicles);
+            } catch (err) {
+                console.log(err);
+                res.status(500).send({ message: "Failed to load Bookings" });
+            }
+        });
+
         // get booking data
         app.get('/bookings/:vehicleId', async (req, res) => {
             const vehicleId = req.params.vehicleId;
@@ -210,6 +230,27 @@ async function run() {
             }
 
             res.send({ booked: false });
+        });
+
+        // delete a booking API
+        app.delete('/bookings/:vehicleId', verifyFireBaseToken, async (req, res) => {
+            const vehicleId = req.params.vehicleId;
+
+            try {
+                const deleteResult = await bookingsCollection.deleteOne({ vehicleId });
+
+                await vehiclesCollection.updateOne(
+                    { _id: new ObjectId(vehicleId) },
+                    { $set: { availability: "Available" } }
+                );
+
+                res.send({ message: "Booking released successfully", deleteResult });
+            } catch (err) {
+                console.log(err);
+                res.status(500).send({
+                    message: "Failed to release Booking"
+                });
+            }
         });
 
         await client.db('admin').command({ ping: 1 });
