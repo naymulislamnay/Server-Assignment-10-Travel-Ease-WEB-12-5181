@@ -8,7 +8,8 @@ const port = process.env.PORT || 3000;
 
 
 
-const serviceAccount = require("./travel-ease-firebase-adminsdk.json");
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -67,7 +68,7 @@ async function run() {
 
         // User APIs
         // create new User
-        app.post('/users', verifyFireBaseToken, async (req, res) => {
+        app.post('/users', async (req, res) => {
             const { name, email, image } = req.body;
             const query = { email };
             const existingUser = await usersCollection.findOne(query);
@@ -87,7 +88,7 @@ async function run() {
         });
 
         // get user data based on email
-        app.get('/users/:email', verifyFireBaseToken, async (req, res) => {
+        app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email };
             const user = await usersCollection.findOne(query);
@@ -95,7 +96,7 @@ async function run() {
         })
 
         // API for update user data
-        app.patch('/users/:email', verifyFireBaseToken, async (req, res) => {
+        app.patch('/users/:email', async (req, res) => {
             const email = req.params.email;
             const { name, image } = req.body;
 
@@ -114,7 +115,7 @@ async function run() {
 
         // Vehicles APIs
         // All vehicles API
-        app.get('/vehicles', verifyFireBaseToken, async (req, res) => {
+        app.get('/vehicles', async (req, res) => {
             const userEmail = req.query.userEmail;
             const query = {}
             if (userEmail) {
@@ -127,14 +128,14 @@ async function run() {
         })
 
         // Latest Vehicles API for HomePage
-        app.get('/latest-vehicles', verifyFireBaseToken, async (req, res) => {
+        app.get('/latest-vehicles', async (req, res) => {
             const cursor = vehiclesCollection.find().sort({ createdAt: -1 }).limit(8);
             const result = await cursor.toArray();
             res.send(result);
         })
 
         // Vehicle Details API
-        app.get('/vehicles/:id', verifyFireBaseToken, async (req, res) => {
+        app.get('/vehicles/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await vehiclesCollection.findOne(query);
@@ -142,14 +143,14 @@ async function run() {
         })
 
         // Add new Vehicle API
-        app.post('/vehicles', verifyFireBaseToken, async (req, res) => {
+        app.post('/vehicles', async (req, res) => {
             const newVehicle = req.body;
             const result = await vehiclesCollection.insertOne(newVehicle);
             res.send(result);
         })
 
         // Update Vehicle API
-        app.patch('/vehicles/:id', verifyFireBaseToken, async (req, res) => {
+        app.patch('/vehicles/:id', async (req, res) => {
             const id = req.params.id;
             const updatedVehicle = req.body;
             const query = { _id: new ObjectId(id) };
@@ -163,7 +164,7 @@ async function run() {
 
 
         // Delete Vehicle API
-        app.delete('/vehicles/:id', verifyFireBaseToken, async (req, res) => {
+        app.delete('/vehicles/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await vehiclesCollection.deleteOne(query);
@@ -253,7 +254,7 @@ async function run() {
             }
         });
 
-        await client.db('admin').command({ ping: 1 });
+        // await client.db('admin').command({ ping: 1 });
         console.log("Pinged Your Deployment. You Successfully Connected to MongoDB");
     }
     finally {
