@@ -3,9 +3,9 @@ const cors = require('cors');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
-const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
 
+const admin = require("firebase-admin");
 
 
 const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
@@ -57,7 +57,7 @@ app.get('/', (req, res) => {
 
 async function run() {
     try {
-        await client.connect()
+        // await client.connect()
 
         const db = client.db('travel-ease-db');
         const vehiclesCollection = db.collection('vehicles-data');
